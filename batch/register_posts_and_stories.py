@@ -267,16 +267,10 @@ def register_posts_and_stories(event=None, lambda_context=None, tmp_file_path="/
                             print('このファイルはmp4ファイルではありません。')
                             if os.path.isfile(f'{tmp_file_path}/{file_name_without_extension}.mp4'):
                                 print(
-                                    f'同一ストーリーでmp4ファイルがあるため、このファイルはアップロードしません。ファイル名：{file_name_with_extension}')
-                                continue
-                        # 拡張子がmp4の場合は拡張子違いのjpgファイルをthumnailファイルとして保存する
-                        else:
-                            if os.path.isfile(f'{tmp_file_path}/{file_name_without_extension}.jpg'):
-                                thumnail_file_name_with_extension = f'{file_name_without_extension}.jpg'
-                                print(
-                                    f'動画用のサムネイル画像ファイルをアップロードします。ファイル名：{thumnail_file_name_with_extension}')
+                                    f'同一ストーリーでmp4ファイルがあるため、ファイルはアップロードし、DBへのデータ登録は行いません。ファイル名：{file_name_with_extension}')
                                 upload_file(const.USER_BUCKET_NAME, name,
-                                            thumnail_file_name_with_extension)
+                                        thumnail_file_name_with_extension)
+                                continue
 
                         print('upload ' + name)
                         upload_file(const.USER_BUCKET_NAME, name,
