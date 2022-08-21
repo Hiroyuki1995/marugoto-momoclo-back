@@ -1,0 +1,268 @@
+service: serverless-flask
+
+plugins:
+  - serverless-python-requirements
+  - serverless-wsgi
+  # - serverless-dynamodb-local # ローカル用？
+
+custom:
+  wsgi:
+    app: app.app # app.app
+    packRequirements: false
+    pythonBin: python
+  pythonRequirements:
+    dockerizePip: non-linux
+    slim: true
+    # pythonBin: python3 # instaloaderの対応バージョンの影響？で、python3.7->3.6ダウングレード時のエラー回避（20210818追加）
+    # zip: true # 20210818追加
+  # tableName: "users-table-${self:provider.stage}"
+  dynamodb:
+    start:
+      migrate: true
+    stages:
+      - test
+  defaultStage: dev
+  # variablesByStage: ${file(./env/${self:provider.stage}.yml)}
+  otherfile:
+    environment:
+      dev: ${file(./env/dev.yml)}
+      prod: ${file(./env/prod.yml)}
+
+provider:
+  name: aws
+  runtime: python3.7 # instaloaderはpython3.6が最低バージョン
+  stage: ${opt:stage, self:custom.defaultStage}
+  endpointType: REGIONAL # 8/9 追加
+  region: ap-northeast-1 # us-east-1
+  lambdaHashingVersion: 20201221
+  apiGateway:
+    apiKeys: # 2021/12/4追加
+      - name: marugoto-momoclo-api-key-${self:provider.stage}
+        value: ${self:custom.otherfile.environment.${self:provider.stage}.X_API_KEY}
+        description: まるごとももクロの開発用のAPIキー
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - sns:*
+          Resource:
+            # - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn"] }
+            - "arn:aws:dynamodb:ap-northeast-1:*:table/Images" # Imagesテーブルに権限を付与
+            - "arn:aws:dynamodb:ap-northeast-1:*:table/*" # 全テーブルに権限を付与
+            - "arn:aws:sns:ap-northeast-1:880515148799:marugoto-momoclo-for-owner" # SMS送信用トピックアクセスの権限を付与
+            - "arn:aws:sns:ap-northeast-1:880515148799:app/APNS_SANDBOX/marugoto-momoclo" # プラットフォームアプリケーション（iOS用サンドボックス）アクセスの権限を付与
+            - "arn:aws:sns:ap-northeast-1:880515148799:app/APNS/marugotoda-Z-prod" # プラットフォームアプリケーション（iOS本番）アクセスの権限を付与
+            - "arn:aws:sns:ap-northeast-1:880515148799:marugoto-momoclo-for-all" # ユーザー全員へのトピックアクセスの権限を付与
+            - "arn:aws:sns:ap-northeast-1:880515148799:marugoto-momoclo-momotakanako"
+            - "arn:aws:sns:ap-northeast-1:880515148799:marugoto-momoclo-sasakiayaka"
+            - "arn:aws:sns:ap-northeast-1:880515148799:marugoto-momoclo-takagireni"
+            - "arn:aws:sns:ap-northeast-1:880515148799:marugoto-momoclo-tamaishiori"
+            - "arn:aws:dynamodb:ap-northeast-1:880515148799:table/Images/index/group-date-index" # Imagesテーブルのindexに権限を付与
+            - "arn:aws:dynamodb:ap-northeast-1:880515148799:table/Photos/index/group-date-index" # Imagesテーブルのindexに権限を付与
+  environment: # 共通の環境変数はここで設定
+    # USERS_TABLE: ${self:custom.tableName}
+    PLATFORM_APPLICATION_ARN: ${self:custom.otherfile.environment.${self:provider.stage}.PLATFORM_APPLICATION_ARN}
+    NOTIFICATIONS_TABLE_NAME: ${self:custom.otherfile.environment.${self:provider.stage}.NOTIFICATIONS_TABLE_NAME}
+    # IS_OFFLINE: false # ここをtrueにすると、AWSへのアクセスをローカルサーバにするはず(詳細はapp.py参照)だが、falseにするとエラーになる。。。
+
+package:
+  excludeDevDependencies: true
+  exclude:
+    - .git/**
+    - .vscode/**
+    - node_modules/**
+    - .serverless/**
+    - .dynamodb/**
+    - __pycache__/**
+functions:
+  downloadImages:
+    handler: wsgi_handler.handler
+    environment:
+      Other_File: ${self:custom.otherfile.environment.${self:provider.stage}.Other_File}
+    # package:
+    #   individually: true
+    events:
+      - http:
+          method: GET
+          path: /photos
+          private: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+      - schedule: rate(5 minutes) # TODO 【要確認】初回起動時の遅延防止のつもり
+  downloadImageUrls:
+    handler: wsgi_handler.handler
+    environment:
+      Other_File: ${self:custom.otherfile.environment.${self:provider.stage}.Other_File}
+    events:
+      - http:
+          method: GET
+          path: /photosUrl
+          private: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+      - schedule: rate(5 minutes) # TODO 【要確認】初回起動時の遅延防止のつもり
+  downloadImageUrl:
+    handler: wsgi_handler.handler
+    environment:
+      Other_File: ${self:custom.otherfile.environment.${self:provider.stage}.Other_File}
+    events:
+      - http:
+          method: GET
+          path: /photosUrl/{id}
+          private: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+  getNotificationSettings:
+    handler: wsgi_handler.handler
+    events:
+      - http:
+          method: GET
+          path: /notifications
+          private: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+  # registerDeviceToken:
+  #   handler: wsgi_handler.handler
+  #   # package:
+  #   #   individually: true
+  #   events:
+  #     - http:
+  #         method: POST
+  #         path: /deviceToken
+  #         private: true
+  #         cors:
+  #           origin: "*"
+  #           headers:
+  #             - Content-Type
+  #             - X-Amz-Date
+  #             - Authorization
+  #             - X-Api-Key
+  #             - X-Amz-Security-Token
+  #             - X-Amz-User-Agent
+  postLineEvents:
+    handler: wsgi_handler.handler
+    environment:
+      Other_File: ${self:custom.otherfile.environment.${self:provider.stage}.Other_File}
+    # package:
+    #   individually: true
+    events:
+      - http:
+          method: POST
+          path: /line/events
+          private: false
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+  registerPostsAndStories:
+    handler: batch/register_posts_and_stories.register_posts_and_stories
+    timeout: 120 # 単位は秒。
+    events:
+      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.registerPostsAndStoriesSchedule}
+      # - schedule: rate(24 hours) # 単数形・複数形を意識して、s/esを付与する
+  registerYoutubeVideos:
+    handler: batch/register_youtube_videos.register_youtube_videos
+    timeout: 120 # 単位は秒。
+    events:
+      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.registerYoutubeVideosSchedule}
+  # registerStories: # リリースまで日次でストーリーを登録
+  #   handler: batch/register_stories.register_stories
+  #   timeout: 600 # 単位は秒。
+  #   events:
+  #     - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.registerStoriesSchedule}
+  #     # - schedule: rate(24 hours) # 単数形・複数形を意識して、s/esを付与する
+  # registerPosts: # リリースまで日次で投稿を登録
+  #   handler: batch/register_posts.register_posts
+  #   timeout: 600 # 単位は秒。
+  #   events:
+  #     - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.registerPostsSchedule}
+  #     # - schedule: rate(24 hours) # 単数形・複数形を意識して、s/esを付与する
+  notifyDailySchedule:
+    handler: batch/notify_daily_schedule.notify_daily_schedule
+    timeout: 600
+    events:
+      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.notifyDailySchedule}
+  registerTweets:
+    handler: batch/register_tweets.register_tweets
+    timeout: 600
+    events:
+      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.registerTweetsSchedule}
+  notifyNewPhotos:
+    handler: batch/notify_new_photos.notify_new_photos
+    timeout: 600
+    events:
+      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.notifyNewPhotosSchedule}
+  executeForLoading:
+    handler: batch/execute_for_loading.execute_for_loading
+    package:
+      individually: true
+    timeout: 30
+    events:
+      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.executeForLoadingSchedule}
+
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: "AWS::ApiGateway::GatewayResponse"
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: "ApiGatewayRestApi"
+    # UsersDynamoDBTable:
+    #   Type: "AWS::DynamoDB::Table"
+    #   Properties:
+    #     AttributeDefinitions:
+    #       - AttributeName: userId
+    #         AttributeType: S
+    #     KeySchema:
+    #       - AttributeName: userId
+    #         KeyType: HASH
+    #     ProvisionedThroughput:
+    #       ReadCapacityUnits: 1
+    #       WriteCapacityUnits: 1
+    #     TableName: ${self:custom.tableName} # 本ファイルのcustom.tableNameの情報が入る
+
+configValidationMode: error
