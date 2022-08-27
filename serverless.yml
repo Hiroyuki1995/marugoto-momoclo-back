@@ -81,6 +81,8 @@ package:
     - .serverless/**
     - .dynamodb/**
     - __pycache__/**
+    - migration_on_another_env/**
+    - migration/**
 functions:
   downloadImages:
     handler: wsgi_handler.handler
