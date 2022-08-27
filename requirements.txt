@@ -9,7 +9,7 @@ Flask==1.1.4
 Flask-Cors==3.0.10
 httplib2==0.20.2
 idna==3.2
-instaloader==4.9.1
+instaloader==4.9.3
 itsdangerous==1.1.0
 Jinja2==2.11.3
 jmespath==0.10.0

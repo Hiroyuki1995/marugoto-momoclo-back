@@ -23,56 +23,71 @@ def createThumnails(tmp_file_path="/tmp", ):
         'TableName': 'Photos',
     }
     args['ExpressionAttributeNames'] = {
+        # "#id": "id"
         "#extension": "extension"
     }
+    # args['FilterExpression'] = "#id = :keyId"
     args['FilterExpression'] = "#extension = :keyVal"
     args['ExpressionAttributeValues'] = {
+        # ':keyId': {'S': '20220824105503'},
         ':keyVal': {'S': 'mp4'},
     }
 
-    response = dbClient.scan(**args)
-    s3Client = boto3.client('s3', aws_access_key_id=const.AWS_ACCESS_KEY_ID,
-                            aws_secret_access_key=const.AWS_SECRET_ACCESS_KEY)
-    # print(f'response {response}')
-    count = 0
-    for item in response['Items']:
-        if 'thumnail' in item:
-            print('サムネイルが既に登録されています')
-            continue
-        fileName = item['fileName']['S']
-        outputFileName = os.path.basename(fileName).split('.', 1)[0] + '.jpg'
-        outputFilePath = tmp_file_path + '/' + outputFileName
-        print(outputFileName)
-        download_file('marugoto-momoclo', fileName, tmp_file_path)
-        cap = cv2.VideoCapture(tmp_file_path + '/' + fileName)
-        if not cap.isOpened():
-            print('cap cant be opened')
-            return
+    while True:
+        response = dbClient.scan(**args)
+        s3Client = boto3.client('s3', aws_access_key_id=const.AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=const.AWS_SECRET_ACCESS_KEY)
+        # print(f'response {response}')
+        count = 0
+        for item in response['Items']:
+            if 'thumnail' in item:
+                print('サムネイルが既に登録されています',item["id"])
+                continue
+            fileName = item['fileName']['S']
+            outputFileName = os.path.basename(fileName).split('.', 1)[0] + '.jpg'
+            outputFilePath = tmp_file_path + '/' + outputFileName
+            print(outputFileName)
+            download_file('marugoto-momoclo', fileName, tmp_file_path)
+            cap = cv2.VideoCapture(tmp_file_path + '/' + fileName)
+            if not cap.isOpened():
+                print('cap cant be opened')
+                return
 
-        # 最初のフレームを読み込む
-        _, img = cap.read()
-        # imgは読み込んだフレームのNumpy配列でのピクセル情報(BGR)
-        # imgのshapeは (高さ, 横幅, 3)
+            # 最初のフレームを読み込む
+            _, img = cap.read()
+            # imgは読み込んだフレームのNumpy配列でのピクセル情報(BGR)
+            # imgのshapeは (高さ, 横幅, 3)
 
-        # 画像ファイルで書き出す
-        # 書き出すときの画像フォーマットはファイル名から自動で決定
-        cv2.imwrite(outputFilePath, img)
+            # 画像ファイルで書き出す
+            # 書き出すときの画像フォーマットはファイル名から自動で決定
+            cv2.imwrite(outputFilePath, img)
 
-        upload_file('marugoto-momoclo', outputFilePath, outputFileName)
+            upload_file('marugoto-momoclo', outputFilePath, outputFileName)
 
-        update_item('Photos', item['person']['S'],
-                    item['id']['S'], outputFileName)
+            update_item('Photos', item['person']['S'],
+                        item['id']['S'], outputFileName)
 
-        # break
+            # break
 
-        # buildVideoCaptures("./sample.mp4", "./thumbnail.jpg")
+            # buildVideoCaptures("./sample.mp4", "./thumbnail.jpg")
 
-        for p in glob.glob(f'{tmp_file_path}/' + '*'):
-            if os.path.isfile(p):
-                #  print(p)
-                os.remove(p)
-        count = count + 1
-    print('count:', count)
+            for p in glob.glob(f'{tmp_file_path}/' + '*'):
+                if os.path.isfile(p):
+                    #  print(p)
+                    os.remove(p)
+            count = count + 1
+
+        if 'LastEvaluatedKey' not in response:
+            print('LastEvaluatedKey is nothing.')
+        else:
+            print('LastEvaluatedKey is exist.')
+            print(response['LastEvaluatedKey'])
+
+        # 続きのデータが無ければ、取得ループを抜ける
+        if 'LastEvaluatedKey' not in response:
+            break
+        args['ExclusiveStartKey'] = response['LastEvaluatedKey']
+        print('count:', count)
 
 
 if __name__ == '__main__':
