@@ -269,8 +269,11 @@ def register_posts_and_stories(event=None, lambda_context=None, tmp_file_path="/
                                 print(
                                     f'同一ストーリーでmp4ファイルがあるため、ファイルはアップロードし、DBへのデータ登録は行いません。ファイル名：{file_name_with_extension}')
                                 upload_file(const.USER_BUCKET_NAME, name,
-                                        thumnail_file_name_with_extension)
+                                        file_name_with_extension)
                                 continue
+                        else:
+                            if os.path.isfile(f'{tmp_file_path}/{file_name_without_extension}.jpg'):
+                                thumnail_file_name_with_extension = f'{file_name_without_extension}.jpg'
 
                         print('upload ' + name)
                         upload_file(const.USER_BUCKET_NAME, name,
