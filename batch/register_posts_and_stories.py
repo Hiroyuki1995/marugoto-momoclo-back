@@ -317,7 +317,7 @@ def register_posts_and_stories(event=None, lambda_context=None, tmp_file_path="/
                             "height": height if height is not None else None,
                             "category": "stories",
                             "extension": extension,
-                            "thumnail": thumnail_file_name_with_extension if thumnail_file_name_with_extension is not '' else None,
+                            "thumnail": thumnail_file_name_with_extension if thumnail_file_name_with_extension != '' else None,
                         })
                         put_items(table_name, items)
                         count = count + 1
@@ -353,4 +353,4 @@ def register_posts_and_stories(event=None, lambda_context=None, tmp_file_path="/
 
 if __name__ == "__main__":
     # ローカルでファイルごと実行した時は、カレントディレクトリ内のtmpフォルダを画像一時保存先とする
-    register_posts_and_stories(tmp_file_path='tmp', days=7)
+    register_posts_and_stories(tmp_file_path='tmp', days=3)

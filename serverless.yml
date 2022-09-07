@@ -196,6 +196,66 @@ functions:
               - X-Api-Key
               - X-Amz-Security-Token
               - X-Amz-User-Agent
+  getLinks:
+    handler: wsgi_handler.handler
+    environment:
+      Other_File: ${self:custom.otherfile.environment.${self:provider.stage}.Other_File}
+    # package:
+    #   individually: true
+    events:
+      - http:
+          method: GET
+          path: /links
+          private: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+  registerLink:
+    handler: wsgi_handler.handler
+    environment:
+      Other_File: ${self:custom.otherfile.environment.${self:provider.stage}.Other_File}
+    # package:
+    #   individually: true
+    events:
+      - http:
+          method: POST
+          path: /links
+          private: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+  disableLink:
+    handler: wsgi_handler.handler
+    environment:
+      Other_File: ${self:custom.otherfile.environment.${self:provider.stage}.Other_File}
+    # package:
+    #   individually: true
+    events:
+      - http:
+          method: DELETE
+          path: /links/{id}
+          private: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
   registerPostsAndStories:
     handler: batch/register_posts_and_stories.register_posts_and_stories
     timeout: 120 # 単位は秒。
