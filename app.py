@@ -4,13 +4,20 @@ from flask import Flask, jsonify, request
 
 from online.get_image_page_data import get_image_page_data
 from online.get_image_urls import get_image_urls
+from online.get_links import get_links
+from online.register_link import register_link
 from common.aws.dynamodb.queryBySortKey import queryBySortKey
 from common.aws.sns.subscribe import subscribe
 from common.aws.dynamodb.get_notification_for_user import get_notification_for_user
 from common.aws.sns.publish_message_to_owner import publish_message_to_owner
+from common.aws.dynamodb.update_link_disabled import update_link_disabled
 import boto3
 import json
 import traceback
+from const import const
+from validation import LinkRegistrationForm
+from werkzeug.datastructures import ImmutableMultiDict
+from werkzeug.exceptions import BadRequestKeyError
 
 
 import os
@@ -57,11 +64,13 @@ def download_images_page():
 def download_image_urls():
     print('Other_File', os.environ['Other_File'])
     print('PLATFORM_APPLICATION_ARN', os.environ['PLATFORM_APPLICATION_ARN'])
+    print('request.args', request.args)
     try:
         print(
             f'person {request.args.get("person")} {type(request.args.get("person"))}')
-        exclusiveStartKey = json.loads(request.args.get('exclusiveStartKey')) if request.args.get(
-            'exclusiveStartKey') is not None else dict()
+        exclusiveStartKeyString = request.args.get(
+            'exclusiveStartKey')
+        exclusiveStartKey = json.loads(request.args.get('exclusiveStartKey')) if (exclusiveStartKeyString == '' or exclusiveStartKeyString is None) == False  else dict()
         person = request.args.get('person') if request.args.get(
             'person') is not None else 'all'
         print(f'person {person} {type(person)}')
@@ -69,8 +78,8 @@ def download_image_urls():
     except Exception as e:
         tb = traceback.format_exc()
         message = f'画像の取得中にエラーが発生しました {e} {tb}'
-        if (NOTIFY_ERROR):
-            publish_message_to_owner(message)
+        # if (NOTIFY_ERROR):
+        #     publish_message_to_owner(message)
         print(f'catch error {e} {tb}')
 
 
@@ -142,6 +151,57 @@ def postLineEvents():
     except Exception as e:
         tb = traceback.format_exc()
         message = f'通知設定中にエラーが発生しました {e} {tb}'
+        if (NOTIFY_ERROR):
+            publish_message_to_owner(message)
+        print(f'catch error {e} {tb}')
+
+@app.route('/links', methods=['GET'])
+def getLinks():
+    """"
+    リンク情報を取得する
+    """
+    try:
+        includeDisabled = True if request.args.get("includeDisabled") == "t" else  False;
+        return get_links(includeDisabled)
+    except Exception as e:
+        tb = traceback.format_exc()
+        message = f'リンク取得中にエラーが発生しました {e} {tb}'
+        # if (NOTIFY_ERROR):
+        #     publish_message_to_owner(message)
+        print(f'catch error {e} {tb}')
+
+@app.route('/links', methods=['POST'])
+def registerLink():
+    """"
+    リンク情報を登録する
+    """
+    try:
+        print(request)
+        print(request.json)
+        print(request.form)
+        form = LinkRegistrationForm(ImmutableMultiDict(request.json))
+        if not form.validate():
+            return (form.errors, 400)
+        res = register_link(ImmutableMultiDict(request.json))
+        return jsonify(res)
+    except Exception as e:
+        tb = traceback.format_exc()
+        message = f'リンク登録中にエラーが発生しました {e} {tb}'
+        if (NOTIFY_ERROR):
+            publish_message_to_owner(message)
+        print(f'catch error {e} {tb}')
+
+@app.route('/links/<id>', methods=['DELETE'])
+def disableLink(id):
+    """"
+    リンク情報を論理削除する
+    """
+    try:
+        res = update_link_disabled(const.LINKS_TABLE_NAME,id)
+        return jsonify(res)
+    except Exception as e:
+        tb = traceback.format_exc()
+        message = f'リンク削除中にエラーが発生しました {e} {tb}'
         if (NOTIFY_ERROR):
             publish_message_to_owner(message)
         print(f'catch error {e} {tb}')

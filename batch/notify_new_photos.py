@@ -30,13 +30,13 @@ def notify_new_photos(event=None, lambda_context=None):
         execute_time_obj = datetime.strptime(
             execute_time_str, '%Y-%m-%dT%H:%M:%SZ')
 
-        # 12:00JSTでは過去12時間分の更新データを取得する、18:00JSTおよび24:00JSTでは過去６時間分の更新データを取得する。それ以外の場合は、取得範囲は0時間。
+        # 12:00JSTでは過去15時間分の更新データを取得する、21:00JSTでは過去9時間分の更新データを取得する。それ以外の場合は、取得範囲は6時間。
         if execute_time_obj.hour == 3 and execute_time_obj.minute == 0:
-            hours = 12
-        elif (execute_time_obj.hour == 9 or execute_time_obj.hour == 15) and execute_time_obj.minute == 0:
-            hours = 6
+            hours = 15
+        elif execute_time_obj.hour == 12 and execute_time_obj.minute == 0:
+            hours = 9
         else:
-            hours = 0
+            hours = 6
         execute_time_obj = datetime.utcnow()
         start_time = execute_time_obj - timedelta(hours=hours)
 
