@@ -138,3 +138,4 @@ migration_on_another_env/venv_for_mig
 .serverless/
 conf.yml
 .requirements.zip
+session_instagram

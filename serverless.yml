@@ -256,6 +256,27 @@ functions:
               - X-Api-Key
               - X-Amz-Security-Token
               - X-Amz-User-Agent
+  registerInstagramPhotos:
+    handler: wsgi_handler.handler
+    environment:
+      Other_File: ${self:custom.otherfile.environment.${self:provider.stage}.Other_File}
+    timeout: 120 # 単位は秒。
+    # package:
+    #   individually: true
+    events:
+      - http:
+          method: POST
+          path: /photos/instagram
+          private: true
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
   registerPostsAndStories:
     handler: batch/register_posts_and_stories.register_posts_and_stories
     timeout: 120 # 単位は秒。
