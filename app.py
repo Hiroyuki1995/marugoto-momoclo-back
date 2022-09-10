@@ -6,6 +6,7 @@ from online.get_image_page_data import get_image_page_data
 from online.get_image_urls import get_image_urls
 from online.get_links import get_links
 from online.register_link import register_link
+from batch.register_posts_and_stories import register_posts_and_stories
 from common.aws.dynamodb.queryBySortKey import queryBySortKey
 from common.aws.sns.subscribe import subscribe
 from common.aws.dynamodb.get_notification_for_user import get_notification_for_user
@@ -205,3 +206,12 @@ def disableLink(id):
         if (NOTIFY_ERROR):
             publish_message_to_owner(message)
         print(f'catch error {e} {tb}')
+
+
+@app.route('/photos/instagram', methods=['POST'])
+def registerInstagramPhotos():
+    """"
+    Instagramのストリーと投稿を登録する
+    """
+    register_posts_and_stories(days=3)
+    return ('', 204)

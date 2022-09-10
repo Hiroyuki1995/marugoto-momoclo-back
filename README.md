@@ -17,8 +17,20 @@ $ npm i -g serverless
 以下のコマンドで作成したファイルを S3 バケット"marugoto-momoclo-secret"にファイル名"session_instagram"として配置する。
 
 ```
-$ instaloader --login [username]
+$ instaloader --login [username] --sessionfile [file_path]
 Enter Instagram password for [username]: enter password
+```
+
+代替手段として以下のコマンドも用意
+
+```
+$ yarn instaloader
+```
+
+- instaloader のセッションファイルの S3 へのアップロード
+
+```
+$ python migration/upload_instagram_session_file.py
 ```
 
 ## 通常コマンド

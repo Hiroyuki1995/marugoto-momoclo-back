@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "pip freeze > requirements.txt && sls deploy"
+    "deploy": "pip freeze > requirements.txt && sls deploy",
+    "instaloader": "instaloader --login marugotomomoclo --sessionfile ./session_instagram"
   },
   "keywords": [],
   "author": "",

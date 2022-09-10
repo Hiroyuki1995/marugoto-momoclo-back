@@ -19,7 +19,7 @@ from common.aws.dynamodb.queryWithinTime import queryWithinTime
 # AWS上で関数が呼ばれる時は、引数なし。Lambda内のルートパスを指定
 
 
-def notify_new_photos(event=None, lambda_context=None):
+def notify_new_photos(event=None, lambda_context=None, doBroadcast = True):
     """"
     直近の00分からhours前の間に登録された写真を集計し、ユーザーに通知する。
     """
@@ -50,12 +50,15 @@ def notify_new_photos(event=None, lambda_context=None):
         print("Count", result["Count"])
         if result["Count"] > 0:
             text = ""
+            notify_photo_id =""
             notif_list_instagram = []
             for person in const.INSTAGRAM_TARGET_USER_LIST.values():
                 count_per_person = 0
                 for item in result["Items"]:
                     if (item["category"]["S"] == "posts" or item["category"]["S"] == "stories") and item["person"]["S"] == person:
                         count_per_person = count_per_person + 1
+                        if notify_photo_id == "":
+                            notify_photo_id = item["id"]["S"]
                 if count_per_person > 0:
                     notif_list_instagram.append(
                         {"person": const.PERSON_NAME[person], "count": count_per_person})
@@ -71,6 +74,8 @@ def notify_new_photos(event=None, lambda_context=None):
                 for item in result["Items"]:
                     if item["category"]["S"] == "tweets" and item["person"]["S"] == user["username"]:
                         count_per_person = count_per_person + 1
+                        if notify_photo_id == "":
+                            notify_photo_id = item["id"]["S"]
                 if count_per_person > 0:
                     notif_list_twitter.append(
                         {"person": user["name"], "count": count_per_person})
@@ -86,6 +91,8 @@ def notify_new_photos(event=None, lambda_context=None):
                 for item in result["Items"]:
                     if item["category"]["S"] == "youtube#video" and item["person"]["S"] == channel["name"]:
                         count_per_person = count_per_person + 1
+                        if notify_photo_id == "":
+                            notify_photo_id = item["id"]["S"]
                 if count_per_person > 0:
                     notif_list_youtube.append(
                         {"person": channel["name"], "count": count_per_person})
@@ -94,12 +101,13 @@ def notify_new_photos(event=None, lambda_context=None):
                 for notif in notif_list_youtube:
                     text = text + "・" + \
                         notif["person"] + str(notif["count"]) + "枚\n"
-            text = text + "https://www.marugoto-momoclo.com/album/"
+            text = text + f"https://www.marugoto-momoclo.com/album/{notify_photo_id}"
             print(text)
             publish_message_to_owner(text)
             # message_to_the_user(
             #     [{'type': 'text', 'text': text}], const.LINE_IWATA_USER_ID)
-            broadcast(
+            if doBroadcast == True:
+                broadcast(
                 [{'type': 'text', 'text': text}])
     except Exception as e:
         tb = traceback.format_exc()
@@ -111,4 +119,4 @@ def notify_new_photos(event=None, lambda_context=None):
 
 if __name__ == "__main__":
     # ローカルでファイルごと実行した時は、カレントディレクトリ内のtmpフォルダを画像一時保存先とする
-    notify_new_photos()
+    notify_new_photos(event = { "time": "2022-09-10T12:00:00Z"},doBroadcast = False)

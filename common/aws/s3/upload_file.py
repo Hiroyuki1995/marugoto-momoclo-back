@@ -17,4 +17,4 @@ def upload_file(bucket_name, lambda_file_path, s3_filepath, resource=None):
       print(e)
 
 if __name__ == "__main__":
-  upload_file()
+  upload_file(lambda_file_path='tmp')
