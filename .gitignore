@@ -130,7 +130,7 @@ dmypy.json
 
 node_modules
 tmp/
-.DS_Store/
+.DS_Store
 
 const/const.py
 
@@ -139,3 +139,4 @@ migration_on_another_env/venv_for_mig
 conf.yml
 .requirements.zip
 session_instagram
+.DS_Store

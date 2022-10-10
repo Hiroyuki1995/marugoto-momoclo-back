@@ -73,6 +73,8 @@ provider:
     # IS_OFFLINE: false # ここをtrueにすると、AWSへのアクセスをローカルサーバにするはず(詳細はapp.py参照)だが、falseにするとエラーになる。。。
 
 package:
+  include:
+    - batch/**
   excludeDevDependencies: true
   exclude:
     - .git/**
@@ -280,6 +282,7 @@ functions:
   registerPostsAndStories:
     handler: batch/register_posts_and_stories.register_posts_and_stories
     timeout: 120 # 単位は秒。
+    maximumRetryAttempts: 0 # instaloaderとして短時間で複数同じリクエストをするのは良くないと判断
     events:
       - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.registerPostsAndStoriesSchedule}
       # - schedule: rate(24 hours) # 単数形・複数形を意識して、s/esを付与する
@@ -300,21 +303,21 @@ functions:
   #   events:
   #     - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.registerPostsSchedule}
   #     # - schedule: rate(24 hours) # 単数形・複数形を意識して、s/esを付与する
-  notifyDailySchedule:
-    handler: batch/notify_daily_schedule.notify_daily_schedule
+  notifyDailyEvent:
+    handler: batch/notify_daily_event.notify_daily_event
     timeout: 600
     events:
-      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.notifyDailySchedule}
+      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.notifyDailyEvent}
   registerTweets:
     handler: batch/register_tweets.register_tweets
     timeout: 600
     events:
       - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.registerTweetsSchedule}
-  notifyNewPhotos:
-    handler: batch/notify_new_photos.notify_new_photos
-    timeout: 600
-    events:
-      - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.notifyNewPhotosSchedule}
+  # notifyNewPhotos:
+  #   handler: batch/notify_new_photos.notify_new_photos
+  #   timeout: 600
+  #   events:
+  #     - schedule: ${self:custom.otherfile.environment.${self:provider.stage}.notifyNewPhotosSchedule}
   executeForLoading:
     handler: batch/execute_for_loading.execute_for_loading
     package:

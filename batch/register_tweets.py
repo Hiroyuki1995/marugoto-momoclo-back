@@ -3,6 +3,8 @@ import glob
 import os
 import traceback
 import wget
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 sys.path.append('../')  # constモジュールインポートのため、デフォルトパスを１つ上の階層にあげる
 from const import const
 from common.aws.s3.upload_file import upload_file

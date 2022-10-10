@@ -1,7 +1,11 @@
+# coding: UTF-8
+
 import sys
+import os
 sys.path.append('../')
-from common.aws.s3.upload_file import upload_file
+# sys.path.append(os.pardir)
 from const import const
+from common.aws.s3.upload_file import upload_file
 
 def upload_instagram_session_file(upload_target_file_path):
   """
