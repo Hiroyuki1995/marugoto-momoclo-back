@@ -8,35 +8,23 @@ import os
 import traceback
 sys.path.append('../')  # constモジュールインポートのため、デフォルトパスを１つ上の階層にあげる
 from const import const
-from common.aws.dynamodb.put_items import put_items
-from common.aws.dynamodb.count_photos import count_photos
 from common.aws.sns.publish_message_to_owner import publish_message_to_owner
-from common.aws.sns.publish_message import publish_message
-from common.line.broadcast import broadcast
-from common.line.message_to_the_user import message_to_the_user
 from common.aws.dynamodb.queryWithinTime import queryWithinTime
 
 # AWS上で関数が呼ばれる時は、引数なし。Lambda内のルートパスを指定
 
 
-def notify_new_photos(event=None, lambda_context=None, doBroadcast = True):
+def notify_new_photos(event=None, lambda_context=None):
     """"
-    直近の00分からhours前の間に登録された写真を集計し、ユーザーに通知する。
+    直近の00分からhours前の間に登録された写真を集計し、公式LINEで通知用のメッセージを生成する。
     """
     try:
         print('event:' + json.dumps(event))
-        hours = 0
+        hours = 24
         execute_time_str = event['time']
         execute_time_obj = datetime.strptime(
             execute_time_str, '%Y-%m-%dT%H:%M:%SZ')
 
-        # 12:00JSTでは過去15時間分の更新データを取得する、21:00JSTでは過去9時間分の更新データを取得する。それ以外の場合は、取得範囲は6時間。
-        if execute_time_obj.hour == 3 and execute_time_obj.minute == 0:
-            hours = 15
-        elif execute_time_obj.hour == 12 and execute_time_obj.minute == 0:
-            hours = 9
-        else:
-            hours = 6
         execute_time_obj = datetime.utcnow()
         start_time = execute_time_obj - timedelta(hours=hours)
 
@@ -48,7 +36,10 @@ def notify_new_photos(event=None, lambda_context=None, doBroadcast = True):
 
         result = queryWithinTime(strtime_from, strtime_to)
         print("Count", result["Count"])
-        if result["Count"] > 0:
+        if result["Count"] == 0:
+            publish_message_to_owner('f過去{hours}時間以内の画像は何もありません。')
+            return ""
+        else:
             text = ""
             notify_photo_id =""
             notif_list_instagram = []
@@ -103,12 +94,7 @@ def notify_new_photos(event=None, lambda_context=None, doBroadcast = True):
                         notif["person"] + str(notif["count"]) + "枚\n"
             text = text + f"https://www.marugoto-momoclo.com/album/{notify_photo_id}"
             print(text)
-            publish_message_to_owner(text)
-            # message_to_the_user(
-            #     [{'type': 'text', 'text': text}], const.LINE_IWATA_USER_ID)
-            if doBroadcast == True:
-                broadcast(
-                [{'type': 'text', 'text': text}])
+            return text
     except Exception as e:
         tb = traceback.format_exc()
         message = f'更新情報の通知中にエラーが発生しました {e} {tb}'
@@ -119,4 +105,4 @@ def notify_new_photos(event=None, lambda_context=None, doBroadcast = True):
 
 if __name__ == "__main__":
     # ローカルでファイルごと実行した時は、カレントディレクトリ内のtmpフォルダを画像一時保存先とする
-    notify_new_photos(event = { "time": "2022-09-10T12:00:00Z"},doBroadcast = False)
+    notify_new_photos(event = { "time": "2022-09-10T12:00:00Z"})

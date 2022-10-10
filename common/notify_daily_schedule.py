@@ -7,13 +7,11 @@ import traceback
 sys.path.append('../')
 from const import const
 from common.aws.sns.publish_message_to_owner import publish_message_to_owner
-from common.line.broadcast import broadcast
-from common.line.message_to_the_user import message_to_the_user
 
 
-def notify_daily_schedule(event=None, lambda_context=None, doBroadcast=True):
+def notify_daily_schedule(event=None, lambda_context=None):
     """
-    起動時刻から1日以内の予定を公式LINEで通知する
+    起動時刻から1日以内の予定を取得し、公式LINEで通知用のメッセージを生成する
     """
     try:
         print('event:' + json.dumps(event))
@@ -44,7 +42,7 @@ def notify_daily_schedule(event=None, lambda_context=None, doBroadcast=True):
         if not events:
             print('No upcoming events found.')
             publish_message_to_owner('本日の予定は何もありません。')
-            return
+            return ''
         print('events', events)
         allDayEvents = []
         NonAllDayEvents = []
@@ -89,13 +87,7 @@ def notify_daily_schedule(event=None, lambda_context=None, doBroadcast=True):
                     f"{start_str}〜{end_str} {summary}")
                 message += f"\n・{start_str}〜{end_str} {summary}"
         message += f"\nhttps://www.marugoto-momoclo.com/calendar/"
-        publish_message_to_owner(message)
-        if doBroadcast == True:
-            broadcast(
-                [{'type': 'text', 'text': message}])
-        else:
-            message_to_the_user(
-                [{'type': 'text', 'text': message}], const.LINE_IWATA_USER_ID)
+        return message
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -107,4 +99,4 @@ def notify_daily_schedule(event=None, lambda_context=None, doBroadcast=True):
 
 if __name__ == '__main__':
     notify_daily_schedule(
-        event={"time": "2022-08-19T00:00:00Z"}, doBroadcast=False)
+        event={"time": "2022-08-19T00:00:00Z"})

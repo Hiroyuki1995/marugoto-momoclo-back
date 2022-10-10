@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "pip freeze > requirements.txt && sls deploy",
-    "instaloader": "instaloader --login marugotomomoclo --sessionfile ./session_instagram"
+    "instaloader": "instaloader --login marumomoclo"
   },
   "keywords": [],
   "author": "",

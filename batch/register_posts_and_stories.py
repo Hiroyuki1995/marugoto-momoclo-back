@@ -182,8 +182,8 @@ def register_posts_and_stories(event=None, lambda_context=None, tmp_file_path="/
                         #  print(p)
                         os.remove(p)
             if count_per_person > 0:
-                publish_message(
-                    f'{const.PERSON_NAME[person]}がInstagramに写真を投稿しました。', person)
+                # publish_message(
+                #     f'{const.PERSON_NAME[person]}がInstagramに写真を投稿しました。', person)
                 result_list.append(
                     {"person": const.PERSON_NAME[person], "count": count_per_person})
         if count > 0:
@@ -330,8 +330,8 @@ def register_posts_and_stories(event=None, lambda_context=None, tmp_file_path="/
                         #  print(p)
                         os.remove(p)
             if count_per_person > 0:
-                publish_message(
-                    f'{const.PERSON_NAME[person]}がInstagramにストーリーズを追加しました。', person)
+                # publish_message(
+                #     f'{const.PERSON_NAME[person]}がInstagramにストーリーズを追加しました。', person)
                 result_list.append(
                     {"person": const.PERSON_NAME[person], "count": count_per_person})
         if count > 0:
@@ -353,4 +353,4 @@ def register_posts_and_stories(event=None, lambda_context=None, tmp_file_path="/
 
 if __name__ == "__main__":
     # ローカルでファイルごと実行した時は、カレントディレクトリ内のtmpフォルダを画像一時保存先とする
-    register_posts_and_stories(tmp_file_path='tmp', days=3)
+    register_posts_and_stories(tmp_file_path='tmp', days=5)
