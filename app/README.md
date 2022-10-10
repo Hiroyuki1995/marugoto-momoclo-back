@@ -1,42 +1,18 @@
-# docker コマンド
+# marugoto-momoclo-back
 
-- docker イメージの作成およびコンテナの起動
+まるごとももクロのバックエンド開発
 
-```
-$ docker compose up -d --build
-```
+# バックエンド
 
-- docker 内に bash コマンドで入る
+## 事前準備
 
-```
-$ docker exec -it [コンテナID or コンテナ名(serverless)] bash
-```
-
-- docker コンテナの一覧
+- serverless framework のグローバルインストール
 
 ```
-$ docker ps
+$ npm i -g serverless
 ```
 
-- docker イメージの一覧
-
-```
-$ docker images
-```
-
-- docker コンテナの削除
-
-```
-$ docker rm [コンテナID or コンテナ名]
-```
-
-- docker イメージの削除
-
-```
-$ docker rmi [イメージID]
-```
-
-# instaloader のセッションファイルの作成
+- instaloader のセッションファイルの作成
 
 以下のコマンドで作成したファイルを S3 バケット"marugoto-momoclo-secret"にファイル名"session_instagram"として配置する。
 
@@ -57,7 +33,7 @@ $ yarn instaloader
 $ python migration/upload_instagram_session_file.py
 ```
 
-# serverless のコマンド
+## 通常コマンド
 
 - AWS へのデプロイコマンド
 
@@ -122,4 +98,3 @@ pip install -r requirements.txt
 ```
 $ deactivate
 ```
-# marugoto-momoclo-backend
