@@ -1,4 +1,5 @@
 service: marugoto-momoclo-back
+app: my-aws-python-flask-dynamodb-api-app
 
 plugins:
   - serverless-python-requirements
