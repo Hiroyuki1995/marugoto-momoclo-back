@@ -1,4 +1,4 @@
-service: serverless-flask
+service: marugoto-momoclo-back
 
 plugins:
   - serverless-python-requirements
