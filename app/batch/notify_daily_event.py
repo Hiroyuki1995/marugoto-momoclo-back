@@ -9,6 +9,7 @@ from common.line.broadcast import broadcast
 from common.line.message_to_the_user import message_to_the_user
 
 def notify_daily_event(event=None, lambda_context=None, doBroadcast=True):
+    print('notify_daily_event is fired')
     schedule_message = notify_daily_schedule(event,lambda_context)
     photo_message = notify_new_photos(event,lambda_context)
     
