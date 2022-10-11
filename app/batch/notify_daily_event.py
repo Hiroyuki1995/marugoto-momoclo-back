@@ -11,7 +11,6 @@ from common.line.message_to_the_user import message_to_the_user
 def notify_daily_event(event=None, lambda_context=None, doBroadcast=True):
     schedule_message = notify_daily_schedule(event,lambda_context)
     photo_message = notify_new_photos(event,lambda_context)
-    print(schedule_message)
     
     message = ""
     if schedule_message != "":
