@@ -14,4 +14,4 @@ def upload_instagram_session_file(upload_target_file_path):
   upload_file(const.SESSION_BUCKET_NAME, upload_target_file_path,const.SESSION_FILE_NAME)
 
 if __name__ == "__main__":
-  upload_instagram_session_file('../session_instagram')
+  upload_instagram_session_file('/root/.config/instaloader/session-purplerenichan')
