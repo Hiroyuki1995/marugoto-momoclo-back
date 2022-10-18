@@ -135,3 +135,4 @@ app/const/const.py
 app/migration_on_another_env/venv_for_mig
 app/session_instagram
 app/common/youtube/Secret.py
+.env
